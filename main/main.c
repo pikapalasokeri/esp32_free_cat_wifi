@@ -5,6 +5,7 @@
 */
 
 #include <sys/param.h>
+#include <unistd.h>
 
 #include "esp_event.h"
 #include "esp_log.h"
@@ -228,6 +229,15 @@ jpg_get_handler(httpd_req_t* req)
 
     /* Respond with an empty chunk to signal HTTP response completion */
     httpd_resp_send_chunk(req, NULL, 0);
+
+    // This is a hack to have the image disappear from the users device.
+    // This makes it more difficult to "Use wifi without internet", which breaks showing of cats.
+    // Stopping the wifi disconnecs the user so that they cannot "Use wifi without internet", as well as
+    // forcing them to reconnect which will serve them a new cat image. Profit.
+    sleep(3);
+    ESP_ERROR_CHECK(esp_wifi_stop());
+    sleep(1);
+    ESP_ERROR_CHECK(esp_wifi_start());
 
     return ESP_OK;
 }
