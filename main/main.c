@@ -25,7 +25,7 @@
 #define EXAMPLE_MAX_STA_CONN CONFIG_ESP_MAX_STA_CONN
 #define HTML_SIZE 64
 #define FILE_PATH_MAX 64
-#define NUM_CATS 4
+#define NUM_CATS 18
 
 static const char* TAG = "KattFi";
 int total_num_connections = 0;
