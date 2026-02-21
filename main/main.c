@@ -23,9 +23,11 @@
 #define EXAMPLE_ESP_WIFI_SSID CONFIG_ESP_WIFI_SSID
 #define EXAMPLE_ESP_WIFI_PASS CONFIG_ESP_WIFI_PASSWORD
 #define EXAMPLE_MAX_STA_CONN CONFIG_ESP_MAX_STA_CONN
-#define HTML_SIZE 64
+#define HTML_SIZE 128
 #define FILE_PATH_MAX 64
 #define NUM_CATS 18
+const int RANDOMISH_CAT_MAPPING[NUM_CATS] =
+  {15, 16, 9, 6, 1, 12, 17, 7, 11, 14, 2, 10, 3, 4, 13, 5, 0, 8};
 
 static const char* TAG = "KattFi";
 int total_num_connections = 0;
@@ -93,9 +95,8 @@ wifi_init_softap(void)
              EXAMPLE_ESP_WIFI_PASS);
 }
 
-#ifdef CONFIG_ESP_ENABLE_DHCP_CAPTIVEPORTAL
 static void
-dhcp_set_captiveportal_url(void)
+dhcp_set_captiveportal_url()
 {
     // get the IP of the access point to redirect to
     esp_netif_ip_info_t ip_info;
@@ -123,7 +124,6 @@ dhcp_set_captiveportal_url(void)
                                            strlen(captiveportal_uri)));
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_netif_dhcps_start(netif));
 }
-#endif // CONFIG_ESP_ENABLE_DHCP_CAPTIVEPORTAL
 
 char html[HTML_SIZE];
 
@@ -131,8 +131,11 @@ char html[HTML_SIZE];
 static esp_err_t
 cat_get_handler(httpd_req_t* req)
 {
-    const int cat_index = total_num_connections % NUM_CATS;
-    sprintf(html, "<center><img width=1000 src=\"/cats/cat%d.jpg\">", cat_index);
+    const int cat_index = RANDOMISH_CAT_MAPPING[total_num_connections % NUM_CATS];
+    sprintf(html,
+            "<center><img width=1000 src=\"/cats/cat%d.jpg\" title=\"total_num_connections=%d\">",
+            cat_index,
+            total_num_connections);
     const size_t len = strlen(html);
 
     ESP_LOGI(TAG, "Serve cat");
@@ -246,11 +249,9 @@ start_webserver()
     config.lru_purge_enable = true;
     config.uri_match_fn = httpd_uri_match_wildcard;
 
-    // Start the httpd server
     ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
     if (httpd_start(&server, &config) == ESP_OK)
     {
-        // Set URI handlers
         ESP_LOGI(TAG, "Registering URI handlers");
 
         httpd_register_uri_handler(server, &root);
@@ -322,10 +323,8 @@ app_main(void)
     // Initialise ESP32 in SoftAP mode
     wifi_init_softap();
 
-// Configure DNS-based captive portal, if configured
-#ifdef CONFIG_ESP_ENABLE_DHCP_CAPTIVEPORTAL
+    // Configure DNS-based captive portal, if configured
     dhcp_set_captiveportal_url();
-#endif
 
     // Start the server for the first time
     start_webserver();
